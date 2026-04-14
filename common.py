@@ -1,0 +1,1 @@
+# Fichier central pour stocker les chemins du projet et les constantes communes
