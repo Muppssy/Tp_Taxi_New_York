@@ -3,13 +3,12 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 import pickle
-import numpy as np
 import pandas as pd
 import sqlite3
 from fastapi import FastAPI
 from pydantic import BaseModel
 import common
-from models.train import preprocess
+
 
 # --- Charger le modèle au démarrage de l'API ---
 with open(common.MODEL_PATH, 'rb') as f:
@@ -37,6 +36,7 @@ def save_prediction(trip: TripInput, duree_secondes: int):
             'predicted_duration': duree_secondes
         }]).to_sql(name='predictions', con=con, if_exists='append', index=False)
 
+
 # --- Endpoint /predict ---
 @app.post("/predict")
 def predict(trip: TripInput):
@@ -50,13 +50,16 @@ def predict(trip: TripInput):
         'dropoff_longitude':trip.dropoff_longitude,
     }])
 
-    y_dummy = pd.Series([0])
-    X_processed, _ = preprocess(X, y_dummy)
+    # TaxiModel.predict() fait preprocessing + prédiction + reconversion
+    duree_secondes = model.predict(X)
 
-    y_pred_log = model.predict(X_processed)
-    duree_secondes = int(np.expm1(y_pred_log[0]))
-
-    # Sauvegarder dans taxi.db
     save_prediction(trip, duree_secondes)
-
     return {"durée_prédite_secondes": duree_secondes}
+
+
+# --- Endpoint /predictions : lire les prédictions sauvegardées ---
+@app.get("/predictions")
+def get_predictions():
+    with sqlite3.connect(common.DB_PATH) as con:
+        data = pd.read_sql('SELECT * FROM predictions', con)
+    return data.to_dict(orient='records')

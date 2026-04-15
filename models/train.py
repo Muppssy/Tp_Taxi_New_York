@@ -1,7 +1,9 @@
 import sys
 from pathlib import Path
+
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
+from models.taxi_model import TaxiModel
 import numpy as np
 import pandas as pd
 import pickle
@@ -59,6 +61,8 @@ def train_model():
     score_test  = root_mean_squared_error(y_test,  model.predict(X_test))
     print(f"RMSLE train : {score_train:.4f}")
     print(f"RMSLE test  : {score_test:.4f}")
+    
+    model = TaxiModel(model)
 
     return model
 
