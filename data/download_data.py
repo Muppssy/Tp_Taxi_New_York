@@ -1,37 +1,29 @@
 import sys
 from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.append(str(PROJECT_ROOT))
+import pandas as pd
+import sqlite3
+from sklearn.model_selection import train_test_split
+import common
 
-from common import DATA_DIR
+# --- Télécharger les données depuis GitHub ---
+def download_data():
+    url = "https://github.com/eishkina-estia/ML2023/raw/main/data/New_York_City_Taxi_Trip_Duration.zip"
+    print(f"Téléchargement des données depuis : {url}")
+    data = pd.read_csv(url, compression='zip')
+    print(f"Données téléchargées : {data.shape[0]} lignes, {data.shape[1]} colonnes")
+    return data
 
-
-def find_data_files():
-    print(f"Dossier data : {DATA_DIR}")
-
-    if not DATA_DIR.exists():
-        print("Le dossier data n'existe pas.")
-        return []
-
-    all_files = list(DATA_DIR.iterdir())
-
-    data_files = []
-    allowed_extensions = [".csv", ".zip", ".xlsx"]
-
-    for file in all_files:
-        if file.is_file() and file.suffix.lower() in allowed_extensions:
-            data_files.append(file)
-
-    if not data_files:
-        print("Aucun fichier de données trouvé dans le dossier data.")
-    else:
-        print("Fichiers de données trouvés :")
-        for file in data_files:
-            print("-", file.name)
-
-    return data_files
-
+# --- Sauvegarder dans la base SQLite ---
+def save_data(data):
+    data_train, data_test = train_test_split(data, test_size=0.3, random_state=common.RANDOM_STATE)
+    print(f"Sauvegarde dans : {common.DB_PATH}")
+    with sqlite3.connect(common.DB_PATH) as con:
+        data_train.to_sql(name='train', con=con, if_exists='replace', index=False)
+        data_test.to_sql(name='test',  con=con, if_exists='replace', index=False)
+    print(f"Train : {len(data_train)} lignes  |  Test : {len(data_test)} lignes")
 
 if __name__ == "__main__":
-    find_data_files()
+    data = download_data()
+    save_data(data)
