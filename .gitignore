@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Artefacts ML (modèles entraînés)
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.pth
+models/model.*
+
+# Base de données
+*.db
+*.sqlite
+*.sqlite3
+
+# Données brutes / téléchargées
+data/*.csv
+data/*.parquet
+data/*.json
+data/*.zip
+
+# Jupyter
+.ipynb_checkpoints/
+notebook/.ipynb_checkpoints/
+
+# Variables d'environnement
+.env
+.env.*
+
+# Logs & rapports MLflow / autres
+mlruns/
+outputs/
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
