@@ -97,3 +97,33 @@ def get_predictions():
     with sqlite3.connect(common.DB_PATH) as con:
         data = pd.read_sql('SELECT * FROM predictions', con)
     return data.to_dict(orient='records')
+
+# --- Endpoint /predict_batch : prédire plusieurs trajets en une fois ---
+@app.post("/predict_batch")
+def predict_batch(trips: list[TripInput]):
+    resultats = []
+
+    for trip in trips:
+        # Valider chaque trajet (lève une erreur 400 si invalide)
+        validate_trip(trip)
+
+        X = pd.DataFrame([{
+            'id': 0,
+            'dropoff_datetime': '2016-01-01 00:00:00',
+            'pickup_datetime':  trip.pickup_datetime,
+            'pickup_latitude':  trip.pickup_latitude,
+            'pickup_longitude': trip.pickup_longitude,
+            'dropoff_latitude': trip.dropoff_latitude,
+            'dropoff_longitude':trip.dropoff_longitude,
+        }])
+
+        duree_secondes = model.predict(X)
+        save_prediction(trip, duree_secondes)
+
+        resultats.append({
+            "pickup_datetime":          trip.pickup_datetime,
+            "durée_prédite_secondes":   duree_secondes,
+            "model_version":            model_version
+        })
+
+    return resultats
