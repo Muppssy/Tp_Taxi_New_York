@@ -72,6 +72,17 @@ def save_model(model):
     with open(common.MODEL_PATH, 'wb') as f:
         pickle.dump(model, f)
     print(f"Modèle sauvegardé : {common.MODEL_PATH}")
+    
+     # Enregistrer les métadonnées dans taxi.db
+    import sqlite3
+    from datetime import datetime
+    with sqlite3.connect(common.DB_PATH) as con:
+        pd.DataFrame([{
+            'version':    '1.0',
+            'path':       str(common.MODEL_PATH),
+            'created_at': datetime.now().isoformat()
+        }]).to_sql(name='models', con=con, if_exists='append', index=False)
+    print("Métadonnées du modèle sauvegardées dans taxi.db")
 
 # --- Point d'entrée ---
 if __name__ == "__main__":

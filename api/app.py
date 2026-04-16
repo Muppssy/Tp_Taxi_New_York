@@ -16,6 +16,13 @@ import common
 # --- Charger le modèle au démarrage de l'API ---
 with open(common.MODEL_PATH, 'rb') as f:
     model = pickle.load(f)
+    
+# --- Lire la version du modèle depuis la base ---
+from datetime import datetime
+with sqlite3.connect(common.DB_PATH) as con:
+    model_info = pd.read_sql('SELECT * FROM models ORDER BY created_at DESC LIMIT 1', con)
+model_version = model_info['version'].values[0]
+print(f"Version du modèle chargé : {model_version}")
 
 app = FastAPI()
 
@@ -57,7 +64,9 @@ def save_prediction(trip: TripInput, duree_secondes: int):
             'pickup_longitude':  trip.pickup_longitude,
             'dropoff_latitude':  trip.dropoff_latitude,
             'dropoff_longitude': trip.dropoff_longitude,
-            'predicted_duration': duree_secondes
+            'predicted_duration': duree_secondes,
+            'inference_at':       datetime.now().isoformat(),  # ← nouveau
+            'model_version':      model_version               
         }]).to_sql(name='predictions', con=con, if_exists='append', index=False)
         
         
@@ -79,7 +88,7 @@ def predict(trip: TripInput):
     duree_secondes = model.predict(X)
 
     save_prediction(trip, duree_secondes)
-    return {"durée_prédite_secondes": duree_secondes}
+    return {"durée_prédite_secondes": duree_secondes, "model_version": model_version}
 
 
 # --- Endpoint /predictions : lire les prédictions sauvegardées ---
